@@ -146,6 +146,15 @@ watch(statusFilter, (value) => {
 
 
 
+const formatRupiah = (angka) => {
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0, // hilangin nol dibelakang
+        maximumFractionDigits: 0,
+    }).format(angka);
+};
+
 </script>
 
 <template>
@@ -252,7 +261,7 @@ watch(statusFilter, (value) => {
 
         <!-- Harga -->
         <td class="px-4 py-3 text-right font-semibold text-gray-800">
-          Rp {{ car.price_per_day.toLocaleString() }}
+          {{ formatRupiah(car.price_per_day) }}
         </td>
 
         <!-- Actions -->

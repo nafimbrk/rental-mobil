@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\Payment;
 use App\Models\Rental;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,15 +89,6 @@ class RentalController extends Controller
             Log::info($th->getMessage());
             return response()->json(['success' => false], 500);
         }
-    }
-
-
-
-    public function index()
-    {
-        $rentalList = Rental::all();
-
-        return inertia('Admin/Transaction/Index');
     }
 
 

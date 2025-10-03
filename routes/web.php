@@ -6,6 +6,7 @@ use App\Http\Controllers\CarController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,7 +38,7 @@ Route::prefix('admin')->name('admin.customer.')->middleware('auth')->group(funct
 
 
 Route::prefix('admin')->name('admin.transaction.')->middleware('auth')->group(function () {
-    Route::get('/transaction', [RentalController::class, 'index'])->name('index');
+    Route::get('/transaction', [TransactionController::class, 'index'])->name('index');
 });
 
 
