@@ -39,6 +39,7 @@ Route::prefix('admin')->name('admin.customer.')->middleware('auth')->group(funct
 
 Route::prefix('admin')->name('admin.transaction.')->middleware('auth')->group(function () {
     Route::get('/transaction', [TransactionController::class, 'index'])->name('index');
+    Route::post('/transaction', [TransactionController::class, 'store'])->name('store');
 });
 
 

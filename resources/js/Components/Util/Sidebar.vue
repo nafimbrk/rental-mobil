@@ -45,7 +45,7 @@ const currentRoute = route().current();
           : 'hover:bg-blue-500 hover:shadow-lg'"
       >
         <span class="material-icons">people</span>
-        <span>User</span>
+        <span>Customer</span>
       </Link>
 
       <Link
