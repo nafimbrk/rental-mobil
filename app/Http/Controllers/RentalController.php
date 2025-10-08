@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Car;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\Rental;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +15,7 @@ use Illuminate\Support\Str;
 
 class RentalController extends Controller
 {
-    public function pesan(Request $request)
+    public function order(Request $request)
     {
         $request->validate([
             'name' => 'required',
@@ -56,41 +58,57 @@ class RentalController extends Controller
                 'status' => 'pending'
             ]);
 
+            // Midtrans Config
+            Config::$serverKey = config('midtrans.server_key');
+            Config::$isProduction = config('midtrans.is_production');
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $rental->uuid,
+                    'gross_amount' => (int) $rental->total_price,
+                ],
+                'customer_details' => [
+                    'first_name' => $newCustomer->name,
+                    'email' => $newCustomer->email,
+                    'phone' => $newCustomer->phone,
+                ],
+            ];
+
+            $snapToken = Snap::getSnapToken($params);
+
+            Payment::create([
+                'rental_id' => $rental->uuid,
+                'amount' => $rental->total_price,
+                'status' => 'pending',
+                'snap_token' => $snapToken
+            ]);
+
+            $carUpdated = Car::findOr($rental->car_id);
+            $carUpdated->update([
+                'status' => 'rented'
+            ]);
+
             DB::commit();
 
+            // return response()->json([
+            //     'success' => true,
+            //     'snap_token' => $snapToken
+            // ]);
 
-            // Midtrans Config
-        Config::$serverKey = config('midtrans.server_key');
-        Config::$isProduction = config('midtrans.is_production');
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
-
-        $params = [
-            'transaction_details' => [
-                'order_id' => $rental->uuid,
-                'gross_amount' => (int) $rental->total_price,
-            ],
-            'customer_details' => [
-                'first_name' => $newCustomer->name,
-                'email' => $newCustomer->email,
-                'phone' => $newCustomer->phone,
-            ],
-        ];
-
-        $snapToken = Snap::getSnapToken($params);
-
-        return response()->json([
-            'success' => true,
-            'snap_token' => $snapToken
-        ]);
-
+            return to_route('car.order.show', ['uuid' => $rental->uuid]);
         } catch (\Throwable $th) {
             DB::rollBack();
             Log::info($th->getMessage());
-            return response()->json(['success' => false], 500);
         }
     }
 
-
-
+    public function showCarOrder($uuid)
+    {
+        $carOrder = Rental::with('customer', 'payment', 'car')->where('uuid', $uuid)->first();
+        return inertia('App/CarOrder', [
+            'carOrder' => $carOrder
+        ]);
+    }
 }

@@ -54,10 +54,6 @@ class PaymentController extends Controller
                     $customer = $rental->customer; // Pastikan ada relasi di model
                     event(new PembayaranSewaSelesai($rental, $customer, $payment));
                 }
-
-                Car::where('id', $rental->car_id)->update([
-                    'status' => 'rented'
-                ]);
             });
 
             Log::info("Payment processed successfully for rental uuid: $orderId");

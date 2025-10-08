@@ -1,14 +1,16 @@
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import LayoutAdmin from '../../../Components/Layout/LayoutAdmin.vue';
 import { useForm } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
+import vSelect from "vue3-select";
+import "vue3-select/dist/vue3-select.css";
 
 
 const props = defineProps({
     transactionList: Object,
-    customerList: Object,
-    carList: Object
+    customerList: Array,
+    carList: Array
 })
 
 
@@ -71,7 +73,7 @@ const formatRupiah = (angka) => {
         maximumFractionDigits: 0,
     }).format(angka);
 };
-   
+
 let modalCreate = ref(false)
 
 const openModalCreate = () => {
@@ -83,7 +85,8 @@ let formCreate = useForm({
     car_id: "",
     start_date: "",
     end_date: "",
-    total_price: ""
+    total_price: "",
+    method: ""
 })
 
 const hitungTotal = () => {
@@ -109,14 +112,118 @@ const hitungTotal = () => {
     }
 };
 
+const hitungTotalEdit = () => {
+    if (formEdit.start_date && formEdit.end_date && formEdit.car_id) {
+        const start = new Date(formEdit.start_date);
+        const end = new Date(formEdit.end_date);
+
+        const selectedCar = props.carList.find(
+            (car) => car.id === parseInt(formEdit.car_id)
+        );
+
+        const diffTime = end - start;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 0 && selectedCar) {
+            formEdit.total_price = diffDays * selectedCar.price_per_day;
+        } else {
+            formEdit.total_price = 0;
+        }
+    }
+};
+
+
 
 const createTransaction = () => {
-    console.log(JSON.stringify(formCreate));
     formCreate.post(route('admin.transaction.store'), {
         onSuccess: () => {
             formCreate.reset()
             modalCreate.value = !modalCreate.value
         }
+    })
+}
+
+const formattedCarList = computed(() =>
+    props.carList.map(car => ({
+        ...car,
+        display: `${car.model} - ${car.plate_number}`,
+    }))
+);
+
+
+const paymentMethods = [
+    { label: "Bank Transfer (Manual)", value: "bank_transfer" },
+    { label: "Gopay", value: "gopay" },
+    { label: "QRIS", value: "qris" },
+    { label: "Alfamart / Indomaret", value: "alfa_or_indo" },
+    { label: "OVO", value: "ovo" },
+    { label: "Dana", value: "dana" },
+    { label: "ShopeePay", value: "shopeepay" },
+    { label: "Kartu Kredit / Debit", value: "credit_card" }
+];
+
+
+let formEdit = useForm({
+    customer_id: "",
+    car_id: "",
+    start_date: "",
+    end_date: "",
+    total_price: "",
+    method: ""
+})
+
+let modalEdit = ref(false)
+let uuidUpdated = ref("")
+
+const openModalEdit = (tl) => {
+    console.log(tl.uuid);
+    
+    modalEdit.value = !modalEdit.value
+
+    formEdit.customer_id = tl.customer_id
+    formEdit.car_id = tl.car_id
+    formEdit.start_date = tl.start_date
+    formEdit.end_date = tl.end_date
+    formEdit.total_price = tl.total_price
+    formEdit.method = tl.payment.method
+
+    uuidUpdated.value = tl.uuid
+}
+
+
+const editTransaction = () => {
+    formEdit.put(route('admin.transaction.update', uuidUpdated.value), {
+        onSuccess: () => {
+            formEdit.reset(),
+            modalEdit.value = !modalEdit.value
+        }
+    })
+}
+
+
+let modalDelete = ref(false)
+let customerTrx = ref("")
+let uuidTrx = ref("")
+
+const openModalDelete = (tl) => {
+    
+    modalDelete.value = !modalDelete.value
+    
+    customerTrx.value = tl.customer.name
+    uuidTrx.value = tl.uuid
+}
+
+const formDelete = useForm({})
+
+const closeModalDelete = () => {
+    modalDelete.value = !modalDelete.value
+    formDelete.reset()
+}
+
+const deleteTrx = () => {
+    
+    formDelete.delete(route('admin.transaction.destroy', uuidTrx.value), {
+        onSuccess: closeModalDelete
     })
 }
 
@@ -166,6 +273,7 @@ const createTransaction = () => {
                         <th class="px-4 py-3 text-left">Mulai Sewa</th>
                         <th class="px-4 py-3 text-left">Selesai Sewa</th>
                         <th class="px-4 py-3 text-left">Total Harga</th>
+                        <th class="px-4 py-3 text-left">Metode Pembayaran</th>
                         <th class="px-4 py-3 text-center">Action</th>
                     </tr>
                 </thead>
@@ -180,15 +288,20 @@ const createTransaction = () => {
                         <td class="px-4 py-3">{{ tl.start_date }}</td>
                         <td class="px-4 py-3">{{ tl.end_date }}</td>
                         <td class="px-4 py-3">{{ tl.total_price }}</td>
+                        <td class="px-4 py-3">{{ tl.payment.method }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="inline-flex space-x-2">
-                                <!-- <button
-              @click="openDeleteModal(tl)"
-              class="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
-              title="Hapus Mobil"
-            >
-              <span class="material-icons text-sm">delete</span>
-            </button> -->
+                                <button @click="openModalEdit(tl)"
+                                    class="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center"
+                                    title="Edit Mobil">
+                                    <span class="material-icons text-sm">edit</span>
+                                </button>
+                                <button @click="openModalDelete(tl)"
+                                    class="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
+                                    title="Hapus Mobil">
+                                    <span class="material-icons text-sm">delete</span>
+                                </button>
+
                             </div>
                         </td>
                     </tr>
@@ -397,60 +510,245 @@ const createTransaction = () => {
                     Pesan Mobil
                 </h2>
 
-                <!-- Grid formStore -->
                 <form @submit.prevent="createTransaction">
+
+
+                    <!-- Grid formStore -->
                     <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
-                        <select v-model="formCreate.customer_id">
-                            <template v-for="customer in customerList">
-                                <option :value="customer.id">{{ customer.name }}</option>
-                            </template>
-                        </select>
+                        <!-- Customer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                            <span v-if="formCreate.errors.customer_id" class="text-red-700 italic">{{
+                                formCreate.errors.customer_id }}</span>
+                            <v-select v-model="formCreate.customer_id" :options="customerList" label="name"
+                                :reduce="customer => customer.id" placeholder="pilih customer"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+                        </div>
+
+                        <!-- Mobil -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobil</label>
+                            <span v-if="formCreate.errors.customer_id" class="text-red-700 italic">{{
+                                formCreate.errors.customer_id }}</span>
+                            <v-select v-model="formCreate.car_id" :options="formattedCarList" label="display"
+                                :reduce="car => car.id" placeholder="pilih mobil" @option:selected="hitungTotal"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+
+                        </div>
+
+                        <!-- Mulai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mulai</label>
+                            <span v-if="formCreate.errors.start_date" class="text-red-700 italic">{{
+                                formCreate.errors.start_date }}</span>
+                            <input type="date" v-model="formCreate.start_date" @change="hitungTotal" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                       focus:ring focus:ring-blue-200 focus:border-blue-500 transition" />
+                        </div>
+
+                        <!-- Selesai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Selesai</label>
+                            <span v-if="formCreate.errors.end_date" class="text-red-700 italic">{{
+                                formCreate.errors.end_date }}</span>
+                            <input type="date" v-model="formCreate.end_date" @change="hitungTotal" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                       focus:ring focus:ring-blue-200 focus:border-blue-500 transition" />
+                        </div>
+
+                        <!-- Total Harga -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Total Harga</label>
+                            <span v-if="formCreate.errors.total_price" class="text-red-700 italic">{{
+                                formCreate.errors.total_price }}</span>
+                            <input type="text" :value="formatRupiah(formCreate.total_price)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                        text-gray-700 focus:ring focus:ring-blue-200 focus:border-blue-500 transition" readonly />
+                        </div>
+                        <!-- Method -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Metode Pembayaran
+                            </label>
+                            <span v-if="formCreate.errors.method" class="text-red-700 italic">
+                                {{ formCreate.errors.method }}
+                            </span>
+
+                            <v-select v-model="formCreate.method" :options="paymentMethods" label="label"
+                                :reduce="method => method.value" placeholder="pilih metode pembayaran"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+                        </div>
+
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email (opsional)</label>
-                        <select v-model="formCreate.car_id" @change="hitungTotal">
-                            <option v-for="car in carList" :key="car.id" :value="car.id">
-                                {{ car.model }}
-                            </option>
-                        </select>
-
+                    <!-- Tombol -->
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="submit"
+                            class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            Pesan
+                        </button>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mulai</label>
-                        <input type="date" v-model="formCreate.start_date" @change="hitungTotal"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Selesai</label>
-                        <input type="date" v-model="formCreate.end_date" @change="hitungTotal"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Total Harga
-                        </label>
-                        <input type="text" :value="formatRupiah(formCreate.total_price)"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200"
-                            readonly />
-                    </div>
-                </div>
-
-                 <!-- Tombol -->
-                <div class="flex justify-end gap-3 pt-4">
-                    <button type="submit"
-                        class="px-4 py-2 rounded-lg text-white transition-colors bg-blue-600 hover:bg-blue-700">
-                        Pesan
-                    </button>
-                </div>
                 </form>
 
-               
+
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+        <!-- modal edit -->
+        <div v-if="modalEdit"
+            class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50"
+            @click.self="modalEdit = !modalEdit">
+            <div class="bg-white/95 backdrop-blur-md rounded-xl shadow-2xl w-full max-w-2xl p-6 relative">
+                <!-- Tombol Close -->
+                <button @click="modalEdit = !modalEdit"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                    ✕
+                </button>
+
+                <h2 class="text-xl font-bold text-gray-800 mb-6">
+                    Pesan Mobil
+                </h2>
+
+                <form @submit.prevent="editTransaction">
+
+
+                    <!-- Grid formStore -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Customer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                            <span v-if="formEdit.errors.customer_id" class="text-red-700 italic">{{
+                                formEdit.errors.customer_id }}</span>
+                            <v-select v-model="formEdit.customer_id" :options="customerList" label="name"
+                                :reduce="customer => customer.id" placeholder="pilih customer"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+                        </div>
+
+                        <!-- Mobil -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobil</label>
+                            <span v-if="formEdit.errors.customer_id" class="text-red-700 italic">{{
+                                formEdit.errors.customer_id }}</span>
+                            <v-select v-model="formEdit.car_id" :options="formattedCarList" label="display"
+                                :reduce="car => car.id" placeholder="pilih mobil" @option:selected="hitungTotalEdit"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+
+                        </div>
+
+                        <!-- Mulai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mulai</label>
+                            <span v-if="formEdit.errors.start_date" class="text-red-700 italic">{{
+                                formEdit.errors.start_date }}</span>
+                            <input type="date" v-model="formEdit.start_date" @change="hitungTotalEdit" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                       focus:ring focus:ring-blue-200 focus:border-blue-500 transition" />
+                        </div>
+
+                        <!-- Selesai -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Selesai</label>
+                            <span v-if="formEdit.errors.end_date" class="text-red-700 italic">{{
+                                formEdit.errors.end_date }}</span>
+                            <input type="date" v-model="formEdit.end_date" @change="hitungTotalEdit" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                       focus:ring focus:ring-blue-200 focus:border-blue-500 transition" />
+                        </div>
+
+                        <!-- Total Harga -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Total Harga</label>
+                            <span v-if="formEdit.errors.total_price" class="text-red-700 italic">{{
+                                formEdit.errors.total_price }}</span>
+                            <input type="text" :value="formatRupiah(formEdit.total_price)" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm 
+                        text-gray-700 focus:ring focus:ring-blue-200 focus:border-blue-500 transition" readonly />
+                        </div>
+                        <!-- Method -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Metode Pembayaran
+                            </label>
+                            <span v-if="formEdit.errors.method" class="text-red-700 italic">
+                                {{ formEdit.errors.method }}
+                            </span>
+
+                            <v-select v-model="formEdit.method" :options="paymentMethods" label="label"
+                                :reduce="method => method.value" placeholder="pilih metode pembayaran"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+                        </div>
+
+                    </div>
+
+                    <!-- Tombol -->
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="submit"
+                            class="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                            Pesan
+                        </button>
+                    </div>
+
+                </form>
+
+
+            </div>
+        </div>
+
+
+
+
+
+        <!-- modal delete -->
+         <div
+            v-if="modalDelete"
+            class="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30 backdrop-blur-sm"
+        >
+            <!-- Modal Box -->
+            <div
+                class="bg-white/80 backdrop-blur-md rounded-xl shadow-lg w-full max-w-md p-6 relative"
+            >
+                <!-- Tombol X -->
+                <button
+                    @click="closeModalDelete"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                >
+                    ✕
+                </button>
+
+                <!-- Judul -->
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    Konfirmasi Hapus
+                </h2>
+
+                <!-- Isi -->
+                <p class="text-gray-600 mb-6">
+                    Yakin ingin menghapus transaksi customer
+                    <span class="font-bold text-red-500">{{
+                        customerTrx
+                    }}</span>
+                    ?
+                </p>
+
+                <!-- Tombol aksi -->
+                <div class="flex justify-end space-x-3">
+                    <button
+                        @click="closeModalDelete"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        @click="deleteTrx"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                        Hapus
+                    </button>
+                </div>
             </div>
         </div>
     </LayoutAdmin>

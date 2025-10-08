@@ -4,7 +4,6 @@ import Layout from "../../Components/Layout/Layout.vue";
 import { useForm } from "@inertiajs/vue3";
 import { route } from "ziggy-js";
 import dayjs from "dayjs";
-import axios from "axios";
 
 defineProps({
     cars: Array,
@@ -137,63 +136,9 @@ const formatRupiah = (angka) => {
     }).format(angka);
 };
 
-const pesanMobil = async () => {
-    console.log("🚀 Klik ke:", Date.now());
-
-    if (!window.snap) {
-        console.warn("⚠️ Snap belum siap, coba lagi sebentar...");
-        return;
-    }
-
-    isSubmitting.value = true; // Set loading state
-
-    try {
-        console.log("📤 Mengirim request...");
-        const response = await axios.post(route("car.pesan"), formPesan);
-        console.log("📥 Response diterima:", response.data);
-
-        const token = response.data.snap_token;
-        console.log("🎫 Snap token:", token);
-
-        if (token) {
-            console.log("✅ Token ada, memanggil window.snap.pay...");
-
-            // Tutup modal SEBELUM membuka Midtrans
-            modalAfterPesan.value = false;
-
-            window.snap.pay(token, {
-                onSuccess: (result) => {
-                    console.log("✅ Payment Success", result);
-                    // Handle success (redirect, show message, etc.)
-                },
-                onPending: (result) => {
-                    console.log("⏳ Payment Pending", result);
-                },
-                onError: (result) => {
-                    console.log("❌ Payment Error", result);
-                },
-                onClose: () => {
-                    console.log("❌ Modal ditutup user");
-                    alert("Kamu menutup popup pembayaran");
-                },
-            });
-        } else {
-            console.log("❌ Token tidak ada!");
-            alert("Gagal mendapatkan token pembayaran");
-        }
-    } catch (error) {
-        console.error(
-            "💥 Error request:",
-            error.response?.data || error.message
-        );
-        alert("Terjadi kesalahan, coba lagi");
-    } finally {
-        isSubmitting.value = false; // Reset loading state
-    }
-};
-
-// Pastikan variable ini ada di setup()
-const isSubmitting = ref(false);
+const pesanMobil = () => {
+    formPesan.post(route('car.order'))
+}
 </script>
 
 <template>
@@ -706,16 +651,9 @@ const isSubmitting = ref(false);
 
                         <button
                             type="submit"
-                            :disabled="isSubmitting"
-                            class="px-5 py-2 rounded-lg text-white font-medium transition-colors"
-                            :class="
-                                isSubmitting
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700'
-                            "
+                            class="px-5 py-2 rounded-lg text-white font-medium transition-colors bg-blue-600 hover:bg-blue-700"
                         >
-                            <span v-if="isSubmitting">⏳ Memproses...</span>
-                            <span v-else>Konfirmasi Pesanan</span>
+                            <span>Konfirmasi Pesanan</span>
                         </button>
                     </div>
                 </form>

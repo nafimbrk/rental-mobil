@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Car;
 use App\Models\Customer;
+use App\Models\Rental;
 
 class AppController extends Controller
 {
@@ -21,10 +22,11 @@ class AppController extends Controller
     {
         $totalCar = Car::get()->count();
         $totalCustomer = Customer::get()->count();
-        $totalCustomer = Customer::get()->count();
+        $totalTransaction = Rental::get()->count();
         return inertia('Admin/Dashboard', [
             'totalCar' => $totalCar,
-            'totalCustomer' => $totalCustomer
+            'totalCustomer' => $totalCustomer,
+            'totalTransaction' => $totalTransaction
         ]);
     }
 }

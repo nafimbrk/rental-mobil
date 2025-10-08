@@ -3,7 +3,8 @@ import LayoutAdmin from '../../Components/Layout/LayoutAdmin.vue';
 
 defineProps({
   totalCar: Number,
-  totalCustomer: Number
+  totalCustomer: Number,
+  totalTransaction: Number
 })
 </script>
 
@@ -39,6 +40,21 @@ defineProps({
         <!-- Kanan (ikon) -->
         <div class="bg-blue-100 p-4 rounded-full">
           <span class="material-icons text-blue-600 text-4xl">people</span>
+        </div>
+      </div>
+    </div>
+  <div class="p-6">
+      <!-- Card Statistik -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 flex items-center justify-between">
+        <!-- Kiri (teks) -->
+        <div>
+          <h2 class="text-lg font-semibold text-gray-600">Total Transaksi</h2>
+          <p class="text-3xl font-bold text-blue-600 mt-2">{{ totalTransaction }}</p>
+        </div>
+
+        <!-- Kanan (ikon) -->
+        <div class="bg-blue-100 p-4 rounded-full">
+          <span class="material-icons text-blue-600 text-4xl">receipt</span>
         </div>
       </div>
     </div>

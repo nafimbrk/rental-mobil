@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('rental_id');
             $table->decimal('amount', 10, 2);
-            $table->string('method');
+            $table->string('method')->nullable();
             $table->enum('status', ['pending', 'paid', 'failed']);
             $table->timestamps();  // payment_date
 

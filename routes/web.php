@@ -15,12 +15,13 @@ Route::get('/', function () {
 
 Route::get('/car-list', [AppController::class, 'getCar'])->name('car.index');
 
-Route::post('/car', [RentalController::class, 'pesan'])->name('car.pesan');
+Route::post('/car-order', [RentalController::class, 'order'])->name('car.order');
+
+Route::get('/car-order/{uuid}', [RentalController::class, 'showCarOrder'])->name('car.order.show');
 
 Route::post('/payment/callback', [PaymentController::class, 'callback']);
 
 Route::get('/admin/dashboard', [AppController::class, 'dashboard'])->name('admin.dashboard')->middleware('auth');
-
 
 Route::prefix('admin')->name('admin.car.')->middleware('auth')->group(function () {
     Route::get('/cars', [CarController::class, 'index'])->name('index');
@@ -40,6 +41,8 @@ Route::prefix('admin')->name('admin.customer.')->middleware('auth')->group(funct
 Route::prefix('admin')->name('admin.transaction.')->middleware('auth')->group(function () {
     Route::get('/transaction', [TransactionController::class, 'index'])->name('index');
     Route::post('/transaction', [TransactionController::class, 'store'])->name('store');
+    Route::put('/transaction/{uuid}', [TransactionController::class, 'update'])->name('update');
+    Route::delete('/transaction/{uuid}', [TransactionController::class, 'destroy'])->name('destroy');
 });
 
 
