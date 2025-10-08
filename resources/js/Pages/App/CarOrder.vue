@@ -1,5 +1,7 @@
 <script setup>
 import dayjs from "dayjs";
+import { route } from "ziggy-js";
+import { router } from "@inertiajs/vue3";
 
 const { carOrder } = defineProps({
     carOrder: Object,
@@ -27,6 +29,7 @@ const bayarSekarang = () => {
     window.snap.pay(token, {
         onSuccess: (result) => {
             console.log("✅ Success", result);
+            router.visit(route('car.index'))
         },
         onPending: (result) => {
             console.log("⏳ Pending", result);

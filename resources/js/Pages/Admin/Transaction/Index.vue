@@ -287,7 +287,7 @@ const deleteTrx = () => {
                                     tl.car.model }}</button></td>
                         <td class="px-4 py-3">{{ tl.start_date }}</td>
                         <td class="px-4 py-3">{{ tl.end_date }}</td>
-                        <td class="px-4 py-3">{{ tl.total_price }}</td>
+                        <td class="px-4 py-3">{{ formatRupiah(tl.total_price) }}</td>
                         <td class="px-4 py-3">{{ tl.payment.method }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="inline-flex space-x-2">
