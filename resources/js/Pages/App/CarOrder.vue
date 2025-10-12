@@ -1,7 +1,8 @@
 <script setup>
 import dayjs from "dayjs";
 import { route } from "ziggy-js";
-import { router } from "@inertiajs/vue3";
+import { Link, router, useForm } from "@inertiajs/vue3";
+import { ref } from "vue";
 
 const { carOrder } = defineProps({
     carOrder: Object,
@@ -29,7 +30,7 @@ const bayarSekarang = () => {
     window.snap.pay(token, {
         onSuccess: (result) => {
             console.log("✅ Success", result);
-            router.visit(route('car.index'))
+            router.reload({ only: ['carOrder'] })
         },
         onPending: (result) => {
             console.log("⏳ Pending", result);
@@ -42,6 +43,21 @@ const bayarSekarang = () => {
         },
     });
 };
+
+
+const modalCancel = ref(false)
+let orderIdDeleted = ref(null)
+
+const openModalCancel = (carOrderId) => {
+    modalCancel.value = !modalCancel.value
+    orderIdDeleted.value = carOrderId
+}
+
+const formCancel = useForm({})
+
+const cancel = () => {
+    formCancel.delete(route('car.order.cancel', orderIdDeleted.value))
+}
 
 </script>
 
@@ -58,11 +74,8 @@ const bayarSekarang = () => {
         <div class="grid md:grid-cols-2 gap-8">
             <!-- Kolom Mobil -->
             <div>
-                <img
-                    :src="carOrder.car?.image ? `/storage/car/${carOrder.car.image}` : '/storage/car/default-car.jpg'"
-                    alt="Car"
-                    class="w-full h-64 object-cover rounded-xl mb-4 shadow"
-                />
+                <img :src="carOrder.car?.image ? `/storage/car/${carOrder.car.image}` : '/storage/car/default-car.jpg'"
+                    alt="Car" class="w-full h-64 object-cover rounded-xl mb-4 shadow" />
 
                 <h3 class="text-lg font-semibold text-gray-800">
                     {{ carOrder.car?.brand }} {{ carOrder.car?.model }}
@@ -99,8 +112,10 @@ const bayarSekarang = () => {
                             <span class="font-medium">Jenis Kelamin:</span>
                             {{ carOrder.customer?.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
                         </li>
-                        <li><span class="font-medium">Mulai:</span> {{ dayjs(carOrder.start_date).format('DD/MM/YYYY') }}</li>
-                        <li><span class="font-medium">Selesai:</span> {{ dayjs(carOrder.end_date).format('DD/MM/YYYY') }}</li>
+                        <li><span class="font-medium">Mulai:</span> {{ dayjs(carOrder.start_date).format('DD/MM/YYYY')
+                        }}</li>
+                        <li><span class="font-medium">Selesai:</span> {{ dayjs(carOrder.end_date).format('DD/MM/YYYY')
+                        }}</li>
                     </ul>
                 </div>
 
@@ -111,26 +126,21 @@ const bayarSekarang = () => {
                     </h3>
                     <ul class="text-gray-600 text-sm mt-2 space-y-1">
                         <li><span class="font-medium">Status:</span>
-                            <span
-                                class="px-2 py-1 text-xs rounded-lg"
-                                :class="carOrder.payment?.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
-                            >
+                            <span class="px-2 py-1 text-xs rounded-lg"
+                                :class="carOrder.payment?.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
                                 {{ carOrder.payment?.status }}
                             </span>
                         </li>
                         <li>
                             <span class="font-medium">Metode:</span>
-                            {{ carOrder.payment?.method || 'Belum dipilih' }}
-                        </li>
-                        <li>
-                            <span class="font-medium">Snap Token:</span>
-                            <code class="text-xs bg-gray-100 px-2 py-1 rounded">{{ carOrder.payment?.snap_token }}</code>
+                            {{ carOrder.payment?.method || 'Belum dibayar' }}
                         </li>
                     </ul>
                 </div>
 
                 <!-- Harga Total -->
-                <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4 shadow-inner">
+                <div
+                    class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4 shadow-inner">
                     <p class="text-gray-700 font-medium text-lg">💰 Total Harga:</p>
                     <p class="text-2xl font-bold text-blue-700">
                         {{ formatRupiah(carOrder.total_price) }}
@@ -139,32 +149,87 @@ const bayarSekarang = () => {
 
                 <!-- Tombol Aksi -->
                 <div class="flex justify-end gap-3">
-                    <button
-                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-5 py-2 rounded-lg transition"
-                    >
-                        Kembali
+                    <button v-if="carOrder.payment.status === 'pending'" @click="openModalCancel(carOrder.uuid)"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-5 py-2 rounded-lg transition">
+                        Batalkan Pesanan
                     </button>
-                    <button @click="bayarSekarang" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
-  Bayar Sekarang
-</button>
-
+                    <button v-if="carOrder.payment.status === 'pending'" @click="bayarSekarang"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        Bayar Sekarang
+                    </button>
+                    <Link v-else :href="route('car.index')" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    Daftar Mobil
+                    </Link>
 
 
                 </div>
             </div>
         </div>
     </div>
+
+
+
+<!-- modal cancel -->
+    <div
+            v-if="modalCancel"
+            class="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30 backdrop-blur-sm"
+        >
+            <!-- Modal Box -->
+            <div
+                class="bg-white/80 backdrop-blur-md rounded-xl shadow-lg w-full max-w-md p-6 relative"
+            >
+                <!-- Tombol X -->
+                <button
+                    @click="modalCancel = false"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                >
+                    ✕
+                </button>
+
+                <!-- Judul -->
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    Konfirmasi Hapus
+                </h2>
+
+                <!-- Isi -->
+                <p class="text-gray-600 mb-6">
+                    Yakin ingin menghapus order:
+                    <span class="font-bold text-red-500">{{
+                        orderIdDeleted
+                    }}</span>
+                    ?
+                </p>
+
+                <!-- Tombol aksi -->
+                <div class="flex justify-end space-x-3">
+                    <button
+                        @click="modalCancel = false"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        @click="cancel"
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                        Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
 </template>
 
 <style scoped>
 .animate-fadeIn {
     animation: fadeIn 0.3s ease-in-out;
 }
+
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: scale(1);

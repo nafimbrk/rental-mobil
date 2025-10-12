@@ -1,7 +1,7 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import LayoutAdmin from '../../../Components/Layout/LayoutAdmin.vue';
-import { useForm } from '@inertiajs/vue3';
+import { router, useForm } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
 import vSelect from "vue3-select";
 import "vue3-select/dist/vue3-select.css";
@@ -10,7 +10,8 @@ import "vue3-select/dist/vue3-select.css";
 const props = defineProps({
     transactionList: Object,
     customerList: Array,
-    carList: Array
+    carList: Array,
+    filters: Object
 })
 
 
@@ -228,6 +229,20 @@ const deleteTrx = () => {
 }
 
 
+let search = ref(props.filters?.search ?? "");
+
+// 🔎 search realtime + debounce langsung di watch
+let timeout = null;
+watch(search, (value) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        router.get(route("admin.transaction.index"),
+            { search: value},
+            { preserveState: true, preserveScroll: true, replace: true }
+        );
+    }, 300); // delay 300ms
+});
+
 </script>
 
 
@@ -273,6 +288,7 @@ const deleteTrx = () => {
                         <th class="px-4 py-3 text-left">Mulai Sewa</th>
                         <th class="px-4 py-3 text-left">Selesai Sewa</th>
                         <th class="px-4 py-3 text-left">Total Harga</th>
+                        <th class="px-4 py-3 text-left">Status</th>
                         <th class="px-4 py-3 text-left">Metode Pembayaran</th>
                         <th class="px-4 py-3 text-center">Action</th>
                     </tr>
@@ -288,6 +304,8 @@ const deleteTrx = () => {
                         <td class="px-4 py-3">{{ tl.start_date }}</td>
                         <td class="px-4 py-3">{{ tl.end_date }}</td>
                         <td class="px-4 py-3">{{ formatRupiah(tl.total_price) }}</td>
+                        <td v-if="tl.status === 'paid'" class="px-4 py-3">Dibayar</td>
+                        <td v-else class="px-4 py-3">Tertunda</td>
                         <td class="px-4 py-3">{{ tl.payment.method }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="inline-flex space-x-2">

@@ -111,4 +111,27 @@ class RentalController extends Controller
             'carOrder' => $carOrder
         ]);
     }
+
+    public function orderCancel($uuid)
+    {
+        try {
+            DB::transaction(function () use ($uuid) {
+                $orderDeleted = Rental::where('uuid', $uuid)->first();
+                $orderDeleted->delete();
+
+                $customerDeleted = Customer::where('id', $orderDeleted->customer_id);
+                $customerDeleted->delete();
+
+                $carUpdated = Car::where('id', $orderDeleted->car_id);
+                $carUpdated->update([
+                    'status' => 'available'
+                ]);
+            });
+
+            return to_route('car.index');
+        } catch (\Throwable $th) {
+            Log::info($th->getMessage());
+            return;
+        }
+    }
 }

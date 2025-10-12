@@ -13,16 +13,47 @@ use Illuminate\Support\Str;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $transactionList = Rental::with('customer', 'car', 'payment')->orderByDesc('created_at')->paginate(10);
+        $keySearch = $request->input('search');
+
+        $transactionList = Rental::with('customer', 'car', 'payment')
+            ->when($keySearch, function ($query, $keySearch) {
+                $query->where(function ($q) use ($keySearch) {
+                    $q->where('start_date', 'like', "%$keySearch%")
+                        ->orWhere('end_date', 'like', "%$keySearch%")
+                        ->orWhere('total_price', 'like', "%$keySearch%")
+                        ->orWhereHas('customer', function ($qry) use ($keySearch) {
+                            $qry->where('name', 'like', "%$keySearch%");
+                        })
+                        ->orWhereHas('car', function ($qry) use ($keySearch) {
+                            $qry->where('model', 'like', "%$keySearch%");
+                        })
+                        ->orWhereHas('payment', function ($qry) use ($keySearch) {
+                            $qry->where('method', 'like', "%$keySearch%");
+                        });
+
+                    if (str_contains(strtolower($keySearch), 'dibayar')) {
+                        $q->orWhere('status', 'paid');
+                    } elseif (str_contains(strtolower($keySearch), 'tertunda')) {
+                        $q->orWhere('status', 'pending');
+                    }
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
         $customerList = Customer::select('id', 'name')->get();
         $carList = Car::select('id', 'model', 'price_per_day', 'plate_number')->get();
 
         return inertia('Admin/Transaction/Index', [
             'transactionList' => $transactionList,
             'customerList' => $customerList,
-            'carList' => $carList
+            'carList' => $carList,
+            'filters' => [
+                'search' => $keySearch
+            ]
         ]);
     }
 

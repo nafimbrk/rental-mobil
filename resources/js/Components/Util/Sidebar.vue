@@ -58,6 +58,16 @@ const currentRoute = route().current();
         <span class="material-icons">receipt</span>
         <span>Transaksi</span>
     </Link>
+      <Link
+        :href="route('admin.operator.index')"
+        class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 hover:bg-blue-500 hover:shadow-lg"
+        :class="currentRoute === 'admin.operator.index'
+          ? 'bg-white text-blue-600 shadow-md'
+          : 'hover:bg-blue-500 hover:shadow-lg'"
+      >
+        <span class="material-icons">receipt</span>
+        <span>Transaksi</span>
+    </Link>
 
       <a
         href="#"

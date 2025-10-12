@@ -4,6 +4,7 @@ use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CarController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\TransactionController;
@@ -18,6 +19,8 @@ Route::get('/car-list', [AppController::class, 'getCar'])->name('car.index');
 Route::post('/car-order', [RentalController::class, 'order'])->name('car.order');
 
 Route::get('/car-order/{uuid}', [RentalController::class, 'showCarOrder'])->name('car.order.show');
+
+Route::delete('/car-order-cancel/{uuid}', [RentalController::class, 'orderCancel'])->name('car.order.cancel');
 
 Route::post('/payment/callback', [PaymentController::class, 'callback']);
 
@@ -43,6 +46,13 @@ Route::prefix('admin')->name('admin.transaction.')->middleware('auth')->group(fu
     Route::post('/transaction', [TransactionController::class, 'store'])->name('store');
     Route::put('/transaction/{uuid}', [TransactionController::class, 'update'])->name('update');
     Route::delete('/transaction/{uuid}', [TransactionController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('admin')->name('admin.operator.')->middleware('auth')->group(function () {
+    Route::get('/operator', [OperatorController::class, 'index'])->name('index');
+    Route::post('/operator', [OperatorController::class, 'store'])->name('store');
+    Route::put('/operator/{uuid}', [OperatorController::class, 'update'])->name('update');
+    Route::delete('/operator/{uuid}', [OperatorController::class, 'destroy'])->name('destroy');
 });
 
 
