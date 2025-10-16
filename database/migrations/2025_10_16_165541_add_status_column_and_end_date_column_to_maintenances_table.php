@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->string('snap_token')->nullable()->after('status');
+        Schema::table('maintenances', function (Blueprint $table) {
+            $table->enum('status', ['in_progress', 'completed']);
+            $table->date('end_date')->nullable();
         });
     }
 
@@ -21,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropColumn('snap_token');
+        Schema::table('maintenances', function (Blueprint $table) {
+            $table->dropColumn('status', 'end_date');
         });
     }
 };

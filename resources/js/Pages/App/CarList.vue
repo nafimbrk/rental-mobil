@@ -124,7 +124,6 @@ let modalAfterPesan = ref(false);
 
 const openModalAfterPesan = () => {
     modalAfterPesan.value = !modalAfterPesan.value;
-    modalPesan.value = false;
 };
 
 const formatRupiah = (angka) => {

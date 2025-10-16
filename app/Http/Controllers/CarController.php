@@ -52,7 +52,6 @@ class CarController extends Controller
             'plate_number' => 'required',
             'color' => 'required',
             'year' => 'required',
-            'status' => 'required',
             'price_per_day' => 'required'
         ], [
             'image.image' => 'Harus berupa gambar',
@@ -63,7 +62,6 @@ class CarController extends Controller
             'plate_number.required' => 'Nomor Plate tidak boleh kosong',
             'color.required' => 'Warna tidak boleh kosong',
             'year.required' => 'Tahun tidak boleh kosong',
-            'status.required' => 'Status harus dipilih',
             'price_per_day.required' => 'Harga/Hari tidak boleh kosong'
         ]);
 
@@ -82,7 +80,7 @@ class CarController extends Controller
                 'plate_number' => $request->input('plate_number'),
                 'color' => $request->input('color'),
                 'year' => $request->input('year'),
-                'status' => $request->input('status'),
+                'status' => 'available',
                 'price_per_day' => $request->input('price_per_day')
             ]);
         } catch (\Throwable $e) {
@@ -102,7 +100,6 @@ class CarController extends Controller
             'plate_number' => 'required',
             'color' => 'required',
             'year' => 'required',
-            'status' => 'required',
             'price_per_day' => 'required'
         ], [
             'image.image' => 'Harus berupa gambar',
@@ -113,7 +110,6 @@ class CarController extends Controller
             'plate_number.required' => 'Nomor Plate tidak boleh kosong',
             'color.required' => 'Warna tidak boleh kosong',
             'year.required' => 'Tahun tidak boleh kosong',
-            'status.required' => 'Status harus dipilih',
             'price_per_day.required' => 'Harga/Hari tidak boleh kosong'
         ]);
 
@@ -135,7 +131,6 @@ class CarController extends Controller
                     'plate_number' => $request->input('plate_number'),
                     'color' => $request->input('color'),
                     'year' => $request->input('year'),
-                    'status' => $request->input('status'),
                     'price_per_day' => $request->input('price_per_day')
                 ]);
             } catch (\Throwable $e) {
@@ -149,7 +144,6 @@ class CarController extends Controller
                     'plate_number' => $request->input('plate_number'),
                     'color' => $request->input('color'),
                     'year' => $request->input('year'),
-                    'status' => $request->input('status'),
                     'price_per_day' => $request->input('price_per_day')
                 ]);
             } catch (\Throwable $e) {

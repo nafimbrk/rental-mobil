@@ -1,7 +1,7 @@
 <script setup>
-import { router, useForm } from "@inertiajs/vue3";
+import { router, useForm, usePage } from "@inertiajs/vue3";
 import LayoutAdmin from "../../../Components/Layout/LayoutAdmin.vue";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { route } from "ziggy-js";
 
 const props = defineProps({
@@ -98,6 +98,13 @@ watch(search, (value) => {
         );
     }, 300); // delay 300ms
 });
+
+const page = usePage()
+const user = computed(() => page.props.auth.user)
+
+const resetFilter = () => {
+    search.value = ""
+}
 </script>
 
 <template>
@@ -123,8 +130,15 @@ watch(search, (value) => {
       />
     </div>
 
+    <button @click="resetFilter"
+                    class="flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">
+                    <span class="material-icons text-base">restart_alt</span>
+                    Reset
+                </button>
+
     <!-- Tambah Customer -->
     <button
+    v-if="user.role === 'admin'"
       @click="openModalCreate"
       class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition"
     >
@@ -144,7 +158,7 @@ watch(search, (value) => {
         <th class="px-4 py-3 text-left">No Telp</th>
         <th class="px-4 py-3 text-left">Umur</th>
         <th class="px-4 py-3 text-left">Jenis Kelamin</th>
-        <th class="px-4 py-3 text-center">Action</th>
+        <th v-if="user.role === 'admin'" class="px-4 py-3 text-center">Action</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-200">
@@ -167,7 +181,7 @@ watch(search, (value) => {
             {{ customer.gender === 'L' ? "Laki-laki" : "Perempuan" }}
           </span>
         </td>
-        <td class="px-4 py-3 text-center">
+        <td v-if="user.role === 'admin'" class="px-4 py-3 text-center">
           <div class="inline-flex space-x-2">
             <button
               @click="openModalUpdate(customer)"

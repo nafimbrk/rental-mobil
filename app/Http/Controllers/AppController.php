@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Car;
 use App\Models\Customer;
+use App\Models\Operator;
 use App\Models\Rental;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AppController extends Controller
 {
@@ -23,10 +27,19 @@ class AppController extends Controller
         $totalCar = Car::get()->count();
         $totalCustomer = Customer::get()->count();
         $totalTransaction = Rental::get()->count();
+        $totalOperator = Operator::get()->count();
+
+        $recentTransactions = Rental::with(['customer', 'car'])
+            ->latest()
+            ->take(5)
+            ->get();
+        
         return inertia('Admin/Dashboard', [
             'totalCar' => $totalCar,
             'totalCustomer' => $totalCustomer,
-            'totalTransaction' => $totalTransaction
+            'totalTransaction' => $totalTransaction,
+            'totalOperator' => $totalOperator,
+            'recentTransactions' => $recentTransactions
         ]);
     }
 }

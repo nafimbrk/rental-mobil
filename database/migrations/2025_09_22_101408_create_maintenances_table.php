@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('maintenances', function (Blueprint $table) {
             $table->id();
             $table->foreignId('car_id')->constrained();
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->date('maintenance_date');
             $table->decimal('cost', 10, 2);
             $table->timestamps();

@@ -55,7 +55,8 @@ class RentalController extends Controller
                 'start_date' => $request->input('start_date'),
                 'end_date' => $request->input('end_date'),
                 'total_price' => $request->input('total_price'),
-                'status' => 'pending'
+                'status' => 'pending',
+                'status_car' => 'rented'
             ]);
 
             // Midtrans Config

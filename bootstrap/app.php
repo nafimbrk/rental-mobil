@@ -3,6 +3,7 @@
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\Guest;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\IsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'auth' => Authenticate::class,
-            'guest' => Guest::class
+            'guest' => Guest::class,
+            'admin' => IsAdmin::class
         ]);
         $middleware->validateCsrfTokens(except: [
             '/payment/callback'
