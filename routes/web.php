@@ -64,6 +64,7 @@ Route::prefix('admin')->name('admin.maintenance.')->middleware('auth', 'admin')-
     Route::post('/maintenance', [MaintenanceController::class, 'store'])->name('store');
     Route::put('/maintenance/{uuid}', [MaintenanceController::class, 'update'])->name('update');
     Route::delete('/maintenance/{uuid}', [MaintenanceController::class, 'destroy'])->name('destroy');
+    Route::post('/maintenance/{uuid}', [MaintenanceController::class, 'endMaintenance'])->name('end');
 });
     
 Route::prefix('admin')->name('admin.')->group(function () {

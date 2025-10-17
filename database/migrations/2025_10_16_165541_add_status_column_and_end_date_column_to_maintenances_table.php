@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('maintenances', function (Blueprint $table) {
-            $table->enum('status', ['in_progress', 'completed']);
-            $table->date('end_date')->nullable();
+            $table->enum('status', ['in_progress', 'completed'])->after('cost');
+            $table->date('end_date')->nullable()->after('status');
         });
     }
 

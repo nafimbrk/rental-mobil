@@ -45,38 +45,30 @@ const storeMaintenance = () => {
 let modalUpdate = ref(false);
 
 const formUpdate = useForm({
-    name: "",
-    email: "",
-    phone: "",
-    age: "",
-    gender: "",
+    car_id: "",
+    description: "",
+    maintenance_date: "",
+    cost: ""
 });
 
-let userId = ref(null)
-let operatorUserId = ref(null);
+let idMaintenanceU = ref("");
 
-const openModalUpdate = (operator) => {
+const openModalUpdate = (maintenance) => {
     modalUpdate.value = true;
 
-    formUpdate.name = operator.user.name;
-    formUpdate.email = operator.user.email;
-    formUpdate.plate_number = operator.plate_number;
-    formUpdate.phone = operator.phone;
-    formUpdate.age = operator.age;
-    formUpdate.gender = operator.gender;
+    formUpdate.car_id = maintenance.car_id;
+    formUpdate.description = maintenance.description;
+    formUpdate.maintenance_date = maintenance.maintenance_date;
+    formUpdate.cost = maintenance.cost;
 
-    userId.value = operator.user.id
-    operatorUserId.value = operator.user_id;
-
-    console.log(modalUpdate.value);
-
+    idMaintenanceU.value = maintenance.id;
 };
 
-const updateoperator = () => {
-    formUpdate.put(`/admin/operator/${userId.value}?operator_id=${operatorUserId.value}`, {
+const updateMaintenance = () => {
+    formUpdate.put(route('admin.maintenance.update', idMaintenanceU.value), {
         onSuccess: () => {
             formUpdate.reset();
-            modalUpdate.value = !modalUpdate.value;
+            modalUpdate.value = false;  
         },
     });
 };
@@ -84,23 +76,20 @@ const updateoperator = () => {
 const formDelete = useForm({});
 
 let deleteModal = ref(false);
-let userIdDelete = ref("");
-let operatorNameDelete = ref("");
+let idMaintenanceD = ref("");
+let plateNumber = ref("");
 
-const openDeleteModal = (operator) => {
-    console.log(operator);
-
+const openDeleteModal = (maintenance) => {
     deleteModal.value = !deleteModal.value;
-    userIdDelete.value = operator.user.id;
-    operatorNameDelete.value = operator.user.name;
+    idMaintenanceD.value = maintenance.id;
+    plateNumber.value = maintenance.car.plate_number;
 };
 
-const deleteoperator = () => {
-    formDelete.delete(route("admin.operator.destroy", userIdDelete.value), {
+const deleteMaintenance = () => {
+    formDelete.delete(route("admin.maintenance.destroy", idMaintenanceD.value), {
         onSuccess: (deleteModal.value = !deleteModal.value),
     });
 };
-
 
 let search = ref(props.filters?.search ?? "");
 
@@ -127,6 +116,25 @@ const formatRupiah = (angka) => {
 
 const resetFilter = () => {
     search.value = ""
+}
+
+let modalEndMaintenance = ref(false)
+let carMaintenance = ref("")
+let idMaintenance = ref("")
+
+const openmodalEndMaintenance = (maintenance) => {
+    modalEndMaintenance.value = true
+    carMaintenance.value = maintenance.car.plate_number
+    idMaintenance.value = maintenance.id
+}
+
+const endMaintenance = () => {
+    router.post(route('admin.maintenance.end', idMaintenance.value), {
+        onSuccess: () => {
+            modalEndMaintenance.value = false
+            router.reload({ only: ['maintenances'] })
+        }
+    })
 }
 </script>
 
@@ -175,6 +183,8 @@ const resetFilter = () => {
                         <th class="px-4 py-3 text-left">Deskripsi</th>
                         <th class="px-4 py-3 text-left">Tanggal Perbaikan</th>
                         <th class="px-4 py-3 text-left">Biaya</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-left">Tanggal Selesai</th>
                         <th class="px-4 py-3 text-center">Action</th>
                     </tr>
                 </thead>
@@ -186,14 +196,32 @@ const resetFilter = () => {
                         <td class="px-4 py-3">{{ maintenance.description }}</td>
                         <td class="px-4 py-3">{{ dayjs(maintenance.maintenance_date).format('DD-MM-YYYY') }}</td>
                         <td class="px-4 py-3">{{ formatRupiah(maintenance.cost) }}</td>
+                        <td class="px-4 py-3">
+                            <button @click="openmodalEndMaintenance(maintenance)"
+                                v-if="maintenance.status === 'in_progress'"
+                                class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                                Progress
+                            </button>
+                            <span v-else
+                                class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                Selesai
+                            </span>
+                        </td>
+                        <td class="px-4 py-3" v-if="maintenance.end_date">
+                            {{ dayjs(maintenance.end_date).format('DD-MM-YYYY') }}
+                        </td>
+                        <td v-else class="px-4 py-3">
+                            Belum Selesai
+                        </td>
+
                         <td class="px-4 py-3 text-center">
                             <div class="inline-flex space-x-2">
-                                <button @click="openModalUpdate(operator)"
+                                <button @click="openModalUpdate(maintenance)"
                                     class="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center"
                                     title="Edit Mobil">
                                     <span class="material-icons text-sm">edit</span>
                                 </button>
-                                <button @click="openDeleteModal(operator)"
+                                <button @click="openDeleteModal(maintenance)"
                                     class="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 flex items-center justify-center"
                                     title="Hapus Mobil">
                                     <span class="material-icons text-sm">delete</span>
@@ -343,58 +371,54 @@ const resetFilter = () => {
                     Edit operator
                 </h2>
 
-                <form @submit.prevent="updateoperator" class="space-y-4">
-                    <!-- Grid formUpdate -->
+                <form @submit.prevent="updateMaintenance" class="space-y-4">
+                    <!-- Grid formStore -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
-                            <span v-if="formUpdate.errors.name" class="text-red-700 italic">{{ formUpdate.errors.name
-                            }}</span>
-                            <input type="text" v-model="formUpdate.name"
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mobil</label>
+                            <span v-if="formUpdate.errors.car_id" class="text-red-700 italic">{{
+                                formUpdate.errors.car_id }}</span>
+                            <v-select v-model="formUpdate.car_id" :options="formattedCarList" label="display"
+                                :reduce="car => car.id" placeholder="pilih mobil"
+                                class="w-full border border-gray-300 rounded-lg text-sm" />
+
+                        </div>
+
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                            <span v-if="formUpdate.errors.description" class="text-red-700 italic">
+                                {{ formUpdate.errors.description }}
+                            </span>
+                            <textarea v-model="formUpdate.description" rows="4"
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200 resize-none"
+                                placeholder="Tulis deskripsi di sini..."></textarea>
+                        </div>
+
+
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Perbaikan</label>
+                            <span v-if="formUpdate.errors.maintenance_date" class="text-red-700 italic">{{
+                                formUpdate.errors.maintenance_date }}</span>
+                            <input type="date" v-model="formUpdate.maintenance_date"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <span v-if="formUpdate.errors.email" class="text-red-700 italic">{{ formUpdate.errors.email
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Biaya Perbaikan</label>
+                            <span v-if="formUpdate.errors.cost" class="text-red-700 italic">{{ formUpdate.errors.cost
                             }}</span>
-                            <input type="email" v-model="formUpdate.email"
+                            <input type="number" v-model="formUpdate.cost"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Telp</label>
-                            <span v-if="formUpdate.errors.phone" class="text-red-700 italic">{{ formUpdate.errors.phone
-                            }}</span>
-                            <input type="text" v-model="formUpdate.phone"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Umur</label>
-                            <span v-if="formUpdate.errors.age" class="text-red-700 italic">{{ formUpdate.errors.age
-                            }}</span>
-                            <input type="text" v-model="formUpdate.age"
-                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring focus:ring-blue-200" />
-                        </div>
                     </div>
 
-                    <!-- Status -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <span v-if="formUpdate.errors.gender" class="text-red-700 italic">{{ formUpdate.errors.gender
-                        }}</span>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2">
-                                <input type="radio" v-model="formUpdate.gender" value="L" />
-                                <span>Laki-laki</span>
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <input type="radio" v-model="formUpdate.gender" value="P" />
-                                <span>Perempuan</span>
-                            </label>
-                        </div>
-                    </div>
+
+
+
+
 
                     <!-- Tombol -->
                     <div class="flex justify-end gap-3 pt-4">
@@ -407,7 +431,6 @@ const resetFilter = () => {
         </div>
 
         <!-- Modal Delete -->
-        <!-- Backdrop -->
         <div v-if="deleteModal"
             class="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30 backdrop-blur-sm">
             <!-- Modal Box -->
@@ -424,9 +447,9 @@ const resetFilter = () => {
 
                 <!-- Isi -->
                 <p class="text-gray-600 mb-6">
-                    Yakin ingin menghapus operator dengan nama:
+                    Yakin ingin menghapus maintenance untuk mobil:
                     <span class="font-bold text-red-500">{{
-                        operatorNameDelete
+                        plateNumber
                     }}</span>
                     ?
                 </p>
@@ -437,8 +460,47 @@ const resetFilter = () => {
                         class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                         Batal
                     </button>
-                    <button @click="deleteoperator" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <button @click="deleteMaintenance" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal end aintenance -->
+        <div v-if="modalEndMaintenance"
+            class="fixed inset-0 flex items-start justify-center pt-20 z-50 bg-black/30 backdrop-blur-sm">
+            <!-- Modal Box -->
+            <div class="bg-white/80 backdrop-blur-md rounded-xl shadow-lg w-full max-w-md p-6 relative">
+                <!-- Tombol X -->
+                <button @click="modalEndMaintenance = false"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                    ✕
+                </button>
+
+                <!-- Judul -->
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    Konfirmasi Hapus
+                </h2>
+
+                <!-- Isi -->
+                <p class="text-gray-600 mb-6">
+                    Yakin ingin menyelesaikan maintenance mobil:
+                    <span class="font-bold text-red-500">{{
+                        carMaintenance
+                    }}</span>
+                    ?
+                </p>
+
+                <!-- Tombol aksi -->
+                <div class="flex justify-end space-x-3">
+                    <button @click="modalEndMaintenance = false"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        Batal
+                    </button>
+                    <button @click="endMaintenance" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Selesai
                     </button>
                 </div>
             </div>
